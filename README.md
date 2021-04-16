@@ -2,6 +2,11 @@
 
 This little script configures a docker container as nix remote builder for nix on your OSX machine. For this to work you need to have [docker-for-mac](https://docs.docker.com/docker-for-mac/) installed.
 
+**ARCHIVED** use [LnL7/nix-docker](https://github.com/LnL7/nix-docker). e.g.,
+```
+source <(curl https://raw.githubusercontent.com/LnL7/nix-docker/master/start-docker-nix-build-slave)
+```
+
 ## Installation
 
 ```
