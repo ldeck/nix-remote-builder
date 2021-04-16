@@ -3,6 +3,8 @@
 NIX_KEY_DIR="${HOME}/.nix/keys"
 DOCKER_SSH_KEY="${HOME}/.ssh/docker_rsa"
 IS_RUNNING=$(docker inspect --format="{{.State.Running}}" nix-docker 2>/dev/null)
+SSHHOME="${HOME}/.ssh"
+SSHCONFIG="${SSHHOME}/config"
 
 if [ "$IS_RUNNING" = "true" ]; then
     echo "nix-docker container is already running"
@@ -11,7 +13,17 @@ else
     docker run --restart always --name nix-docker -d -p 3022:22 lnl7/nix:ssh
 fi
 
-touch ~/.ssh/config
+if [ -f $SSHCONFIG ]; then
+    NOW=$(date -u "+%Y%m%d.%H%M%S")
+    cp $SSHCONFIG "$SSHCONFIG.$NOW"
+    echo "Created ssh config backup: $SSHCONFIG.$NOW"
+else
+    if ! [ -d $SSHHOME ]; then
+        mkdir -p ~/.ssh
+    fi
+    touch $SSHCONFIG
+fi
+
 grep -q nix-docker ~/.ssh/config
 if [ $? -eq 0 ] ; then
     echo "Found entry for \"nix-docker\" in ssh config"
