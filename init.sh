@@ -13,29 +13,32 @@ else
     docker run --restart always --name nix-docker -d -p 3022:22 lnl7/nix:ssh
 fi
 
-if [ -f $SSHCONFIG ]; then
-    NOW=$(date -u "+%Y%m%d.%H%M%S")
-    cp $SSHCONFIG "$SSHCONFIG.$NOW"
-    echo "Created ssh config backup: $SSHCONFIG.$NOW"
-else
-    if ! [ -d $SSHHOME ]; then
-        mkdir -p ~/.ssh
-    fi
-    touch $SSHCONFIG
-fi
-
-grep -q nix-docker ~/.ssh/config
-if [ $? -eq 0 ] ; then
-    echo "Found entry for \"nix-docker\" in ssh config"
-else
-    echo "Adding ssh config entry to ${HOME}/.ssh/config"
-    cat ./files/ssh-config | sed -e "s,__KEY__,${DOCKER_SSH_KEY}," >> ${HOME}/.ssh/config
-fi
-
 echo "Installing (insecure) rsa key"
 mkdir -p $NIX_KEY_DIR
 cp ./files/insecure_rsa $DOCKER_SSH_KEY
 chmod 600 $DOCKER_SSH_KEY
+
+# ssh config
+if [ -f $SSHCONFIG ]; then
+    NOW=$(date -u "+%Y%m%d.%H%M%S")
+    cp $SSHCONFIG "${SSHCONFIG}.${NOW}"
+    echo "Created ssh config backup: ${SSHCONFIG}.${NOW}"
+else
+    if ! [ -d $SSHHOME ]; then
+        mkdir -p $SSHHOME
+    fi
+    touch $SSHCONFIG
+fi
+
+grep -q nix-docker $SSHCONFIG
+if [ $? -eq 0 ] ; then
+    echo "Found entry for \"nix-docker\" in ssh config"
+else
+    echo "Adding ssh config entry to ${SSHCONFIG}"
+    tail -c1 $SSHCONFIG | read -r _ || echo >> $SSHCONFIG
+    echo "" >> $SSHCONFIG
+    cat ./files/ssh-config | sed -e "s,__KEY__,${DOCKER_SSH_KEY}," >> $SSHCONFIG
+fi
 
 echo "Creating (insecure) signing keypair"
 openssl genrsa -out $NIX_KEY_DIR/signing-key.sec 2048
